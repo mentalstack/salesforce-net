@@ -16,12 +16,12 @@
         public string Value { get; set; }
 
         /// <summary>
-        /// Gets or sets active.
+        /// Gets or sets is active.
         /// </summary>
         public bool Active { get; set; }
 
         /// <summary>
-        /// Gets or sets default value.
+        /// Gets or sets is default value.
         /// </summary>
         public bool DefaultValue { get; set; }
 
@@ -34,7 +34,7 @@
     }
 
     /// <summary>
-    /// Child relationship entity.
+    /// Child relationship.
     /// </summary>
     public class ChildRelationship
     {
@@ -56,17 +56,17 @@
         public string RelationshipName { get; set; }
 
         /// <summary>
-        /// Gets or sets restricted delete.
+        /// Gets or sets is restricted delete.
         /// </summary>
         public bool RestrictedDelete { get; set; }
 
         /// <summary>
-        /// Gets or sets deprecated and hidden.
+        /// Gets or sets is deprecated and hidden.
         /// </summary>
         public bool DeprecatedAndHidden { get; set; }
 
         /// <summary>
-        /// Gets or sets cascade delete.
+        /// Gets or sets is cascade delete.
         /// </summary>
         public bool CascadeDelete { get; set; }
 
@@ -111,12 +111,12 @@
         public RecordTypeInfoLayoutUrl Urls { get; set; }
 
         /// <summary>
-        /// Gets or sets record type mapping.
+        /// Gets or sets is record type mapping.
         /// </summary>
         public bool DefaultRecordTypeMapping { get; set; }
 
         /// <summary>
-        /// Gets or sets available.
+        /// Gets or sets is available.
         /// </summary>
         public bool Available { get; set; }
 
@@ -470,7 +470,6 @@
         /// Child relationships list.
         /// </summary>
         private List<ChildRelationship> _childRelationships = null;
-
 
         /// <summary>
         /// Type infos list.

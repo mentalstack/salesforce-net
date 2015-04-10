@@ -10,7 +10,7 @@
         #region Public Properties
 
         /// <summary>
-        /// 
+        /// Gets or sets id.
         /// </summary>
         public string Id { get; set; }
 
@@ -25,7 +25,7 @@
         #region Private Fields
 
         /// <summary>
-        ///
+        /// Generic records list.
         /// </summary>
         private List<T> _records = null;
 
@@ -34,7 +34,7 @@
         #region Public Properties
 
         /// <summary>
-        /// 
+        /// Generic records list.
         /// </summary>
         public List<T> Records
         {
@@ -44,17 +44,17 @@
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets total.
         /// </summary>
         public int TotalSize { get; set; }
 
         /// <summary>
-        /// 
+        /// Gets or sets next record url.
         /// </summary>
         public string NextRecordsUrl { get; set; }
 
         /// <summary>
-        /// 
+        /// Gets or sets done.
         /// </summary>
         public bool Done { get; set; }
 
