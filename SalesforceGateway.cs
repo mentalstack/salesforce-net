@@ -535,7 +535,7 @@
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        public List<T> GetMany<T>(string typeName, string where = "", string order = "") where T : BaseEntity
+        public List<T> GetMany<T>(string typeName, string where, string order) where T : BaseEntity
         {
             string soql = null;
 
@@ -550,7 +550,7 @@
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        public List<T> GetMany<T>(string where = "", string order = "") where T : BaseEntity
+        public List<T> GetMany<T>(string where, string order) where T : BaseEntity
         {
             return GetMany<T>(ExtractName(typeof(T)), where, order);
         }
@@ -558,7 +558,7 @@
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        public List<T> GetMany<T>(string typeName, int limit, int offset, string where = "", string order = "") where T : BaseEntity
+        public List<T> GetMany<T>(string typeName, int limit, int offset, string where, string order) where T : BaseEntity
         {
             string soql = null;
 
@@ -573,7 +573,7 @@
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        public List<T> GetMany<T>(int limit, int offset, string where = "", string order = "") where T : BaseEntity
+        public List<T> GetMany<T>(int limit, int offset, string where, string order) where T : BaseEntity
         {
             return GetMany<T>(ExtractName(typeof(T)), limit, offset, where, order);
         }

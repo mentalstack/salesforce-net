@@ -62,22 +62,22 @@
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        List<T> GetMany<T>(string name, string where = "", string order = "") where T : BaseEntity;
+        List<T> GetMany<T>(string name, string where, string order) where T : BaseEntity;
 
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        List<T> GetMany<T>(string where = "", string order = "") where T : BaseEntity;
+        List<T> GetMany<T>(string where, string order) where T : BaseEntity;
 
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        List<T> GetMany<T>(string name, int limit, int offset, string where = "", string order = "") where T : BaseEntity;
+        List<T> GetMany<T>(string name, int limit, int offset, string where, string order) where T : BaseEntity;
 
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        List<T> GetMany<T>(int limit, int offset, string where = "", string order = "") where T : BaseEntity;
+        List<T> GetMany<T>(int limit, int offset, string where, string order) where T : BaseEntity;
 
         /// <summary>
         /// Updates record.
