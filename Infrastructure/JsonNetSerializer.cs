@@ -15,9 +15,67 @@
     using System.Reflection;
 
     /// <summary>
-    /// Salesforce contract resolver.
+    /// RFC1123 converter.
     /// </summary>
-    public class SalesforceContractResolver : CamelCasePropertyNamesContractResolver
+    public class RfcDateTimeConverter : IsoDateTimeConverter
+    {
+        #region Defines
+
+        /// <summary>
+        /// RFC1123 date time format.
+        /// </summary>
+        public const string RFC1123 = "R";
+
+        #endregion
+
+        #region Public Properties
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
+        public RfcDateTimeConverter()
+        {
+            DateTimeFormat = RFC1123; DateTimeStyles = DateTimeStyles.None;
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Serialization contract resolver.
+    /// </summary>
+    public class SerializationContractResolver : CamelCasePropertyNamesContractResolver
+    {
+        #region Protected Methods
+
+        /// <summary>
+        /// Creates property.
+        /// </summary>
+        protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization serialization)
+        {
+            JsonProperty result = null;
+
+            result = base.CreateProperty(member, serialization);
+
+            if (member.GetCustomAttribute<IgnoreCreateUpdateAttribute>() != null)
+            {
+                return null; // null if ignore for create and update
+            }
+
+            return result;
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Deserialization contract resolver.
+    /// </summary>
+    public class DeserializationContractResolver : CamelCasePropertyNamesContractResolver
     {
         #region Protected Methods
 
@@ -26,21 +84,7 @@
         /// </summary>
         protected override JsonProperty CreateProperty(MemberInfo memberInfo, MemberSerialization s)
         {
-            IgnoreAttribute ignore = null;
-
-            var result = base.CreateProperty(memberInfo, s);
-
-            object[] attributes = memberInfo.GetCustomAttributes(typeof(IgnoreAttribute), true);
-            {
-                ignore = (attributes.FirstOrDefault() as IgnoreAttribute); if (ignore == null) return result;
-            }
-
-            if (ignore is IgnoreCreateUpdateAttribute)
-            {
-                return null; // null if ignore for create and update
-            }
-
-            return result;
+            return base.CreateProperty(memberInfo, s);
         }
 
         #endregion
@@ -102,15 +146,15 @@
         {
             var settings = new JsonSerializerSettings // define serializer settings
             {
-                ContractResolver = new SalesforceContractResolver(), NullValueHandling = NullValueHandling.Include
+                ContractResolver = new SerializationContractResolver(), NullValueHandling = NullValueHandling.Include
             };
 
-            settings.Converters.Add(new IsoDateTimeConverter
-            {
-                DateTimeFormat = DateFormat ?? RFC1123, DateTimeStyles = DateTimeStyles.None
-            });
+            settings.Converters.Add(new RfcDateTimeConverter());
 
-            return JsonConvert.SerializeObject(obj, settings);
+            return JsonConvert.SerializeObject
+                (
+                    obj, settings
+                );
         }
 
         /// <summary>
@@ -125,12 +169,12 @@
                 ContractResolver = new CamelCasePropertyNamesContractResolver(), NullValueHandling = NullValueHandling.Include
             };
 
-            settings.Converters.Add(new IsoDateTimeConverter
-            {
-                DateTimeFormat = DateFormat ?? RFC1123, DateTimeStyles = DateTimeStyles.None
-            });
+            settings.Converters.Add(new RfcDateTimeConverter());
 
-            return JsonConvert.DeserializeObject<T>(content, settings);
+            return JsonConvert.DeserializeObject<T>
+                (
+                    content, settings
+                );
         }
 
         #endregion

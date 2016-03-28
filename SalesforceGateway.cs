@@ -1,6 +1,10 @@
 ﻿namespace SalesforceNet
 {
+    using Newtonsoft;
+    using Newtonsoft.Json;
+
     using RestSharp;
+    using RestSharp.Authenticators;
 
     using SalesforceNet.Attributes;
     using SalesforceNet.Infrastructure;
@@ -10,8 +14,8 @@
     using System.Collections.Generic;
 
     using System;
-    using System.Configuration;
     using System.Linq;
+    using System.Configuration;
     using System.Reflection;
     using System.Text;
 
@@ -107,18 +111,18 @@
     {
         #region Defines
 
-        private const string ID_FIELD_NAME              = "Id";
+        private const string ID_FIELD_NAME = "Id";
 
-        private const string FLOW_PASSWORD              = "password";
-        private const string FLOW_AUTHORIZATION_CODE    = "authorization_code";
-        private const string FLOW_TOKEN                 = "refresh_token";
+        private const string FLOW_PASSWORD = "password";
+        private const string FLOW_AUTHORIZATION_CODE = "authorization_code";
+        private const string FLOW_TOKEN = "refresh_token";
 
-        private const string SELECT_ID_FORMAT           = "SELECT {0} FROM {1} WHERE Id = '{2}'";
-        private const string SELECT_FORMAT              = "SELECT {0} FROM {1}";
+        private const string SELECT_FORMAT = "SELECT {0} FROM {1}";
+        private const string SELECT_ID_FORMAT = "SELECT {0} FROM {1} WHERE Id = '{2}'";
         private const string SELECT_LIMIT_OFFSET_FORMAT = "SELECT {0} FROM {1} {2} {3} LIMIT {4} OFFSET {5}";
-        private const string SELECT_ORDER_FORMAT        = "SELECT {0} FROM {1} {2} {3}";
+        private const string SELECT_WHERE_FORMAT = "SELECT {0} FROM {1} {2}";
 
-        private const string VERSION                    = "v32.0";
+        private const string VERSION = "v36.0";
 
         #endregion
 
@@ -134,46 +138,60 @@
         #region Private Methods
 
         /// <summary>
-        /// Recursively extracts properties names.
+        /// Extracts entity name.
         /// </summary>
-        public string ExtractName(Type type)
+        public string ExtractEntityName(Type type)
         {
-            string result = null;
-
-            EntityAttribute attribute = type.GetCustomAttribute<EntityAttribute>();
+            var attribute = type.GetCustomAttribute<JsonObjectAttribute>();
             {
-                result = (attribute != null) ? attribute.Name : type.Name;
+                return (attribute != null) ? attribute.Id : type.Name; // rename if required
             }
-
-            return result;
         }
 
         /// <summary>
         /// Recursively extracts properties names.
         /// </summary>
-        public List<string> ExtractFields(Type type, string typePrefix = null)
+        public List<string> ExtractEntityFields(Type type, string prefix = null, bool stop = false)
         {
             var result = new List<string>();
 
-            foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (property.GetCustomAttribute<IgnoreGetAttribute>() != null)
+                string propertyName = null;
+
+                var attribute = property.GetCustomAttribute<JsonPropertyAttribute>();
+                {
+                    propertyName = attribute != null ? attribute.PropertyName : property.Name;
+                }
+
+                if (property.GetCustomAttribute<IgnoreGetAttribute>() != null) // check ignore get property
                 {
                     continue;
                 }
-                else if (property.GetCustomAttribute<ExtractRecursivelyAttribute>() != null)
+                else if (property.GetCustomAttribute<ExtractRecursivelyAttribute>() != null) // check extract recursively
                 {
-                    result.AddRange(ExtractFields(property.PropertyType, property.Name));
-                }
-                else
-                {
-                    if (!String.IsNullOrEmpty(typePrefix))
+                    if (stop) continue; // skip property
+
+                    bool loop = (type == property.PropertyType); // check is loop reference
+
+                    if (!String.IsNullOrEmpty(prefix)) // check prefix
                     {
-                        result.Add(String.Format("{0}.{1}", typePrefix, property.Name));
+                        result.AddRange(ExtractEntityFields(property.PropertyType, String.Format("{0}.{1}", prefix, propertyName), stop: loop));
+                    }
+                    else // if no type prefix - just add name to list, no prefix
+                    {
+                        result.AddRange(ExtractEntityFields(property.PropertyType, propertyName, stop: loop));
+                    }
+                }
+                else // none of them
+                {
+                    if (!String.IsNullOrEmpty(prefix))
+                    {
+                        result.Add(String.Format("{0}.{1}", prefix, propertyName));
                     }
                     else // if no type prefix - just add name to list
                     {
-                        result.Add(property.Name);
+                        result.Add(propertyName);
                     }
                 }
             }
@@ -258,34 +276,6 @@
             {
                 return result;
             }
-        }
-
-        #endregion
-
-        #region Protected Methods
-
-        /// <summary>
-        /// Executes request.
-        /// </summary>
-        protected void Execute(Method method, string[] segments, Dictionary<string, string> parameters = null, object body = null)
-        {
-            RestClient.Execute(BuildRequest(method, segments, parameters, body));
-        }
-
-        /// <summary>
-        /// Executes request.
-        /// </summary>
-        protected T Execute<T>(Method method, string[] segments, Dictionary<string, string> parameters = null, object body = null) where T : new()
-        {
-            return RestClient.Execute<T>(BuildRequest(method, segments, parameters, body)).Data;
-        }
-
-        /// <summary>
-        /// Executes request.
-        /// </summary>
-        protected T Execute<T>(Method method, string resource, object body = null) where T : new()
-        {
-            return RestClient.Execute<T>(BuildRequest(method, resource, body)).Data;
         }
 
         #endregion
@@ -483,11 +473,149 @@
         /// <summary>
         /// Gets single record.
         /// </summary>
-        public T Get<T>(string id, string typeName) where T : BaseEntity
+        public T Get<T>(string id) where T : BaseEntity
+        {
+            return Query<T>(id, ExtractEntityName(typeof(T)));
+        }
+
+        /// <summary>
+        /// Gets collection of records.
+        /// </summary>
+        public List<T> GetMany<T>() where T : BaseEntity
+        {
+            string joined = String.Join(", ", ExtractEntityFields(typeof(T), null));
+
+            string soql = String.Format(SELECT_FORMAT, joined, ExtractEntityName(typeof(T)));
+            {
+                return QueryMany<T>(soql); // make a query
+            }
+        }
+
+        /// <summary>
+        /// Gets collection of records.
+        /// </summary>
+        public List<T> GetMany<T>(string where) where T : BaseEntity
+        {
+            string joined = String.Join(", ", ExtractEntityFields(typeof(T), null));
+
+            string soql = String.Format(SELECT_WHERE_FORMAT, joined, ExtractEntityName(typeof(T)), where);
+            {
+                return QueryMany<T>(soql); // make a query
+            }
+        }
+
+        /// <summary>
+        /// Gets collection of records.
+        /// </summary>
+        public List<T> GetMany<T>(int limit, int offset, string where) where T : BaseEntity
+        {
+            string joined = String.Join(", ", ExtractEntityFields(typeof(T), null));
+
+            string soql = String.Format(SELECT_LIMIT_OFFSET_FORMAT, joined, ExtractEntityName(typeof(T)), where, limit, offset);
+            {
+                return QueryMany<T>(soql); // make a query
+            }
+        }
+
+        /// <summary>
+        /// Creates new record.
+        /// </summary>
+        public T Create<T>(T source) where T : BaseEntity
+        {
+            string name = ExtractEntityName(typeof(T));
+
+            var qr = Execute<CreateResult>(Method.POST, new[] { "sobjects", name }, body: source);
+            {
+                source.Id = qr.Id; // reestablish id
+            }
+
+            return source;
+        }
+
+        /// <summary>
+        /// Updates record.
+        /// </summary>
+        public void Update<T>(string id, T source) where T : BaseEntity
+        {
+            Execute(Method.PATCH, new[] { "sobjects", ExtractEntityName(typeof(T)), id }, body: source);
+        }
+
+        /// <summary>
+        /// Deletes record.
+        /// </summary>
+        public void Delete<T>(string id) where T : BaseEntity
+        {
+            Execute(Method.DELETE, new[] { "sobjects", ExtractEntityName(typeof(T)), id });
+        }
+
+        #endregion
+
+        #region Public Methods : IDisposible Implementation
+
+        /// <summary>
+        /// Disposes current instance.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true); GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Disposes current instance resources.
+        /// </summary>
+        protected virtual void Dispose(bool disposing = true)
+        {
+            /* disconnect from salesforce */ if (disposing) RestClient = null;
+        }
+
+        /// <summary>
+        /// Default destructor.
+        /// </summary>
+        ~SalesforceGateway()
+        {
+            Dispose(false);
+        }
+
+        #endregion
+
+        #region Protected Methods
+
+        /// <summary>
+        /// Executes request.
+        /// </summary>
+        protected void Execute(Method method, string[] segments, Dictionary<string, string> parameters = null, object body = null)
+        {
+            RestClient.Execute(BuildRequest(method, segments, parameters, body));
+        }
+
+        /// <summary>
+        /// Executes request.
+        /// </summary>
+        protected T Execute<T>(Method method, string[] segments, Dictionary<string, string> parameters = null, object body = null) where T : new()
+        {
+            return RestClient.Execute<T>(BuildRequest(method, segments, parameters, body)).Data;
+        }
+
+        /// <summary>
+        /// Executes request.
+        /// </summary>
+        protected T Execute<T>(Method method, string resource, object body = null) where T : new()
+        {
+            return RestClient.Execute<T>(BuildRequest(method, resource, body)).Data;
+        }
+
+        #endregion
+
+        #region Protected Methods : Query
+
+        /// <summary>
+        /// Gets single record.
+        /// </summary>
+        protected T Query<T>(string name) where T : BaseEntity
         {
             var parameters = new Dictionary<string, string>
             {
-                { "q", String.Format(SELECT_ID_FORMAT, String.Join(", ", ExtractFields(typeof(T))), typeName, id) }
+                { "q", String.Format(SELECT_FORMAT, String.Join(", ", ExtractEntityFields(typeof(T), null)), name) }
             };
 
             var result = Execute<QueryResult<T>>(Method.GET, new[] { "query" }, parameters);
@@ -499,15 +627,23 @@
         /// <summary>
         /// Gets single record.
         /// </summary>
-        public T Get<T>(string id) where T : BaseEntity
+        protected T Query<T>(string id, string name) where T : BaseEntity
         {
-            return Get<T>(id, ExtractName(typeof(T)));
+            var parameters = new Dictionary<string, string> // define parameters including id
+            {
+                { "q", String.Format(SELECT_ID_FORMAT, String.Join(", ", ExtractEntityFields(typeof(T), null)), name, id) }
+            };
+
+            var result = Execute<QueryResult<T>>(Method.GET, new[] { "query" }, parameters);
+            {
+                return result.Records.FirstOrDefault();
+            }
         }
 
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        public List<T> GetMany<T>(string soql) where T : BaseEntity
+        protected List<T> QueryMany<T>(string soql) where T : BaseEntity
         {
             var result = new List<T>();
 
@@ -530,115 +666,6 @@
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Gets collection of records.
-        /// </summary>
-        public List<T> GetMany<T>(string typeName, string where, string order) where T : BaseEntity
-        {
-            string soql = null;
-
-            string joined = String.Join(", ", ExtractFields(typeof(T)));
-            {
-                soql = String.Format(SELECT_ORDER_FORMAT, joined, typeName, where, order);
-            }
-
-            return GetMany<T>(soql);
-        }
-
-        /// <summary>
-        /// Gets collection of records.
-        /// </summary>
-        public List<T> GetMany<T>(string where, string order) where T : BaseEntity
-        {
-            return GetMany<T>(ExtractName(typeof(T)), where, order);
-        }
-
-        /// <summary>
-        /// Gets collection of records.
-        /// </summary>
-        public List<T> GetMany<T>(string typeName, int limit, int offset, string where, string order) where T : BaseEntity
-        {
-            string soql = null;
-
-            string joined = String.Join(", ", ExtractFields(typeof(T)));
-            {
-                soql = String.Format(SELECT_LIMIT_OFFSET_FORMAT, joined, typeName, where, order, limit, offset);
-            }
-
-            return GetMany<T>(soql);
-        }
-
-        /// <summary>
-        /// Gets collection of records.
-        /// </summary>
-        public List<T> GetMany<T>(int limit, int offset, string where, string order) where T : BaseEntity
-        {
-            return GetMany<T>(ExtractName(typeof(T)), limit, offset, where, order);
-        }
-
-        /// <summary>
-        /// Updates record.
-        /// </summary>
-        public void Update(string id, string typeName, object source)
-        {
-            Execute(Method.PATCH, new[] { "sobjects", typeName, id }, body: source);
-        }
-
-        /// <summary>
-        /// Updates record.
-        /// </summary>
-        public void Update<T>(string id, T source) where T : BaseEntity
-        {
-            Update(id, ExtractName(typeof(T)), source);
-        }
-
-        /// <summary>
-        /// Creates new record.
-        /// </summary>
-        public string Create(string typeName, object source)
-        {
-            var qr = Execute<IdResult>(Method.POST, new[] { "sobjects", typeName }, body: source);
-            {
-                return qr.Id;
-            }
-        }
-
-        /// <summary>
-        /// Creates new record.
-        /// </summary>
-        public string Create<T>(T source) where T : BaseEntity
-        {
-            return Create(ExtractName(typeof(T)), source);
-        }
-
-        /// <summary>
-        /// Deletes record.
-        /// </summary>
-        public void Delete(string id, string typeName)
-        {
-            Execute(Method.DELETE, new[] { "sobjects", typeName, id });
-        }
-
-        /// <summary>
-        /// Deletes record.
-        /// </summary>
-        public void Delete<T>(string id) where T : BaseEntity
-        {
-            Delete(id, ExtractName(typeof(T)));
-        }
-
-        #endregion
-
-        #region Public Methods : IDisposible
-
-        /// <summary>
-        /// Disposes current instance.
-        /// </summary>
-        public void Dispose()
-        {
-            RestClient = null; GC.SuppressFinalize(this);
         }
 
         #endregion

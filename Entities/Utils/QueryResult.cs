@@ -5,7 +5,7 @@
     /// <summary>
     /// Id query result.
     /// </summary>
-    public class IdResult
+    public class CreateResult
     {
         #region Public Properties
 

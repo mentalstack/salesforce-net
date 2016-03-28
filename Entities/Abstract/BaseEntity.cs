@@ -6,7 +6,7 @@
     using System;
 
     /// <summary>
-    /// Entity base class.
+    /// Base entity.
     /// </summary>
     public class BaseEntity
     {
@@ -15,7 +15,6 @@
         /// <summary>
         /// Gets or sets id.
         /// </summary>
-        [IgnoreCreateUpdate]
         public string Id { get; set; }
 
         /// <summary>

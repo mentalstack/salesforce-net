@@ -40,14 +40,9 @@
         DescribeGlobalResult Global();
 
         /// <summary>
-        /// Describes specified object.
+        /// Describes object.
         /// </summary>
-        DescribeResult DescribeObject(string name);
-
-        /// <summary>
-        /// Gets single record.
-        /// </summary>
-        T Get<T>(string id, string name) where T : BaseEntity;
+        DescribeResult DescribeObject(string typeName);
 
         /// <summary>
         /// Gets single record.
@@ -57,52 +52,27 @@
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        List<T> GetMany<T>(string soql) where T : BaseEntity;
+        List<T> GetMany<T>() where T : BaseEntity;
 
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        List<T> GetMany<T>(string name, string where, string order) where T : BaseEntity;
+        List<T> GetMany<T>(string where) where T : BaseEntity;
 
         /// <summary>
         /// Gets collection of records.
         /// </summary>
-        List<T> GetMany<T>(string where, string order) where T : BaseEntity;
+        List<T> GetMany<T>(int limit, int offset, string where) where T : BaseEntity;
 
         /// <summary>
-        /// Gets collection of records.
+        /// Creates new record.
         /// </summary>
-        List<T> GetMany<T>(string name, int limit, int offset, string where, string order) where T : BaseEntity;
-
-        /// <summary>
-        /// Gets collection of records.
-        /// </summary>
-        List<T> GetMany<T>(int limit, int offset, string where, string order) where T : BaseEntity;
-
-        /// <summary>
-        /// Updates record.
-        /// </summary>
-        void Update(string id, string name, object source);
+        T Create<T>(T source) where T : BaseEntity;
 
         /// <summary>
         /// Updates record.
         /// </summary>
         void Update<T>(string id, T source) where T : BaseEntity;
-
-        /// <summary>
-        /// Creates new record.
-        /// </summary>
-        string Create(string name, object source);
-
-        /// <summary>
-        /// Creates new record.
-        /// </summary>
-        string Create<T>(T source) where T : BaseEntity;
-
-        /// <summary>
-        /// Deletes record.
-        /// </summary>
-        void Delete(string id, string name);
 
         /// <summary>
         /// Deletes record.
