@@ -166,7 +166,7 @@
 
             var settings = new JsonSerializerSettings // define de-serializer settings
             {
-                ContractResolver = new CamelCasePropertyNamesContractResolver(), NullValueHandling = NullValueHandling.Include
+                ContractResolver = new DeserializationContractResolver(), NullValueHandling = NullValueHandling.Include
             };
 
             settings.Converters.Add(new RfcDateTimeConverter());
