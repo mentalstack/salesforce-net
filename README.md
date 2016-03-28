@@ -3,9 +3,7 @@ SalesforceNet
 
 Salesforce REST wrapper for .NET.
 
-SalesforceNet is **lightweight and entity oriented** Salesforce wrapper. It automatically extracts fields from entities and builds required SOQL requests. 
-
-ExtractRecursively attribute allows you to get **related data**, for example Contact's Account. Or User's Account. Ignore attributes allow to filter what fields should be ignored from Get or Create.
+SalesforceNet is **lightweight and entity oriented** Salesforce wrapper. It automatically extracts fields from entities and builds required SOQL requests. ExtractRecursively attribute allows you to get **related data**, for example Contact's Account. Or User's Account. Ignore attributes allow to filter what fields should be ignored from Get or Create.
 
 For first you should to define your Salesforce entity derived from BaseEntity:
 
