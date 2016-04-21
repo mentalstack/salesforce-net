@@ -113,7 +113,7 @@ Creating
 --------
 
 ```CSharp
-_salesforce.Create<Contact>(new AttemptCobject { ... });
+_salesforce.Create<AttemptCobject>(new AttemptCobject { ... });
 ```
 
 Same for Update and Delete ...
