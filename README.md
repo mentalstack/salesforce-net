@@ -106,7 +106,7 @@ Getting
 -------
 
 ```CSharp 
-List<Contact> contacts = _salesforce.GetMany<AttemptCobject>(whereClause, orderClause); 
+List<AttemptCobject> attempts = _salesforce.GetMany<AttemptCobject>(where, order); 
 ```
 
 Creating
