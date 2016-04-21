@@ -111,12 +111,7 @@ Creating
 --------
 
 ```CSharp
-var contact = new Contact
-{
-	FirstName = "Ivan", Title = "Programmer", LastName = "Drago"
-};
-
-_salesforce.Create<Contact>(contact);
+_salesforce.Create<Contact>(new AttemptCobject { ... });
 ```
 
 Same for Update and Delete ...
