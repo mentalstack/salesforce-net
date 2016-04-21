@@ -3,9 +3,7 @@ SalesforceNet
 
 Salesforce REST wrapper for .NET.
 
-SalesforceNet is **lightweight and entity oriented** Salesforce wrapper. It automatically extracts fields from entities and builds required SOQL requests. ExtractRecursively attribute allows you to get **related data**, for example Contact's Account. Or User's Account. Ignore attributes allow to filter what fields should be ignored from Get or Create.
-
-Password, authorization code and token oAuth flows are supported.
+SalesforceNet is **lightweight and entity oriented** Salesforce wrapper. Password, authorization code and token oAuth flows are supported. It automatically extracts fields from entities and builds required SOQL requests. ExtractRecursively attribute allows you to get **related data**, for example Contact's Account. Or User's Account. Ignore attributes allow to filter what fields should be ignored from Get or Create.
 
 For first you should to define your Salesforce entity derived from BaseEntity:
 
@@ -102,8 +100,8 @@ public class AttemptCobject : BaseEntity
 }
 ```
 
-Getting
--------
+Getting, Fetching
+-----------------
 
 ```CSharp 
 List<AttemptCobject> attempts = _salesforce.GetMany<AttemptCobject>(where, order); 
@@ -115,5 +113,3 @@ Creating
 ```CSharp
 _salesforce.Create<AttemptCobject>(new AttemptCobject { ... });
 ```
-
-Same for Update and Delete ...
